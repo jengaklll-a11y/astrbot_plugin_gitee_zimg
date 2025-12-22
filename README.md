@@ -11,7 +11,7 @@
 
 - `api_key`: Gitee AI API Key，请在 Gitee AI 控制台申请。
 - `size`: 默认图片大小，例如 `2048x2048`。
-- `num_inference_steps`: 推理步数，默认 9。表示图像生成时的迭代步数，数值越大图像越清晰，但生成时间也越长。
+- `num_inference_steps`: 迭代步数，默认 9。
 - `临时图片保留时长/小时 (0为不删除)`:默认 1。
 
 ## Gitee AI API Key获取方法：
@@ -40,6 +40,7 @@
 - 请确保您的 Gitee AI 账号有足够的额度/每天一百次免费额度。
 
 - 生成的图片会临时保存在 `data/plugin_data/astrbot_plugin_gitee_aiimg/images` 目录下。
+
 
 
 
