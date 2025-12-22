@@ -1,4 +1,4 @@
-# AstrBot Gitee AI 图像生成插件 （有免费额度/日限一百次）
+# AstrBot Gitee AI 图像生成插件 （免费额度/日限一百次）
 
 ## 功能特性
 
@@ -60,6 +60,7 @@
 - 请确保您的 Gitee AI 账号有足够的额度/每天一百次免费额度。
 
 - 生成的图片会临时保存在 `data/plugin_data/astrbot_plugin_gitee_aiimg/images` 目录下。
+
 
 
 
