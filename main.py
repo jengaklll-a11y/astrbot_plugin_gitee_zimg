@@ -44,7 +44,7 @@ class GiteeAIImage(Star):
         self.client = AsyncOpenAI(base_url=self.base_url, api_key=self.api_key)
 
     # =========================================================
-    # 🧹 自动清理模块
+    # 自动清理模块
     # =========================================================
     def _cleanup_temp_files(self):
         if self.retention_hours <= 0: return
@@ -95,7 +95,7 @@ class GiteeAIImage(Star):
         return str(path)
 
     # ---------------------------------------------------------
-    # 模块 B：文生图核心
+    # 文生图模块
     # ---------------------------------------------------------
     async def _generate_2d_core(self, prompt: str, size: str = None):
         target_size = size if size else self.default_size
@@ -190,3 +190,4 @@ class GiteeAIImage(Star):
             ])
         except Exception as e:
             yield event.plain_result(f"绘图失败: {e}")
+
