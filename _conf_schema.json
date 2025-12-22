@@ -20,7 +20,7 @@
         ]
     },
     "num_inference_steps": {
-        "description": "推理步数 (1-50)",
+        "description": "迭代步数",
         "type": "int",
         "default": 9,
         "slider": {
@@ -41,5 +41,6 @@
         }
     }
 }
+
 
 
