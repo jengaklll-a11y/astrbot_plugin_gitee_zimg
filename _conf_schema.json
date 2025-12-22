@@ -30,10 +30,9 @@
         }
     },
     "retention_hours": {
-        "description": "临时图片保留时长/小时",
+        "description": "临时图片保留时长/小时 (0为不删除)",
         "type": "float",
         "default": 1.0,
-        "hint": "填 0 则不自动删除",
         "slider": {
             "min": 0,
             "max": 72,
@@ -41,3 +40,4 @@
         }
     }
 }
+
