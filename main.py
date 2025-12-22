@@ -8,7 +8,7 @@ import time
 import base64
 import aiohttp
 
-@register("astrbot_plugin_gitee_zimg", "jengaklll-a11y", "Gitee AI 文生图")
+@register("astrbot_plugin_gitee_zimg", "jengaklll-a11y", "Gitee AI 文生图", "1.0.0")
 class GiteeAIImage(Star):
     def __init__(self, context: Context, config: dict):
         super().__init__(context)
@@ -143,3 +143,4 @@ class GiteeAIImage(Star):
             ])
         except Exception as e:
             yield event.plain_result(f"绘图失败: {e}")
+
