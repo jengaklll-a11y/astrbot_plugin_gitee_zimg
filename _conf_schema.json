@@ -1,33 +1,88 @@
 {
     "base_url": {
-        "description": "API Base URL",
+        "description": "Gitee API 地址",
         "type": "string",
-        "default": "https://ai.gitee.com/v1",
-        "hint": "Gitee AI API 地址"
+        "default": "https://ai.gitee.com/v1"
     },
     "api_key": {
-        "description": "API 密钥 (支持多 Key 轮询)",
+        "description": "Gitee API Key",
         "type": "list",
-        "hint": "Gitee AI API Key，支持配置多个 Key 以实现轮询调用",
         "default": [],
-        "obvious_hint": true
+        "obvious_hint": false
     },
     "model": {
-        "description": "使用的模型名称",
+        "description": "2D绘图模型",
         "type": "string",
-        "default": "z-image-turbo",
-        "hint": "例如: z-image-turbo"
+        "default": "z-image-turbo"
+    },
+    "model_3d": {
+        "description": "3D建模模型",
+        "type": "string",
+        "default": "Hunyuan3D-2"
+    },
+    "enable_refine": {
+        "description": "🔥 开启AI图像优化",
+        "type": "bool",
+        "default": false,
+        "hint": "开启后，强制进行【白模化】预处理。"
+    },
+    "vision_base_url": {
+        "description": "👀 视觉模型 API地址",
+        "type": "string",
+        "default": "https://api.siliconflow.cn/v1",
+        "hint": "必填！例如 SiliconFlow 地址。必须以 /v1 结尾。"
+    },
+    "vision_api_key": {
+        "description": "👀 视觉模型 API Key",
+        "type": "string",
+        "default": "",
+        "hint": "视觉模型专用 Key。留空则默认使用 Gitee Key。"
+    },
+    "vision_model": {
+        "description": "👀 视觉模型名称",
+        "type": "string",
+        "default": "google/gemini-2.0-flash-exp",
+        "hint": "推荐: google/gemini-2.0-flash-exp"
+    },
+    "retention_hours": {
+        "description": "🧹 临时文件保留时长 (小时)",
+        "type": "float",
+        "default": 1.0,
+        "hint": "生成的图片和3D模型在硬盘里存多久？建议 0.5 或 1 小时。填 0 则不自动删除。"
+    },
+    "enable_texture": {
+        "description": "开启3D纹理",
+        "type": "bool",
+        "default": true
+    },
+    "octree_resolution": {
+        "description": "3D分辨率",
+        "type": "int",
+        "default": 400
+    },
+    "steps_3d": {
+        "description": "3D推理步数",
+        "type": "int",
+        "default": 50
+    },
+    "guidance_scale": {
+        "description": "3D引导系数",
+        "type": "float",
+        "default": 5.0
+    },
+    "seed": {
+        "description": "随机种子",
+        "type": "int",
+        "default": -1
     },
     "size": {
-        "description": "图片大小",
+        "description": "2D图片分辨率",
         "type": "string",
-        "default": "1024x1024",
-        "hint": "例如: 1024x1024"
+        "default": "1024x1024"
     },
     "num_inference_steps": {
-        "description": "推理步数",
+        "description": "2D推理步数",
         "type": "int",
-        "default": 9,
-        "hint": "推理步数，默认 9"
+        "default": 9
     }
 }
