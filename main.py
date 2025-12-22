@@ -17,7 +17,7 @@ class GiteeAIImage(Star):
         # 1. 基础配置
         self.base_url = config.get("base_url", "https://ai.gitee.com/v1")
         self.model_2d = config.get("model", "z-image-turbo")
-        self.size = config.get("size", "1024x1024")
+        self.size = config.get("size", "2048x2048")
         self.steps = config.get("num_inference_steps", 9)
         
         # Key 解析逻辑
@@ -143,6 +143,7 @@ class GiteeAIImage(Star):
             ])
         except Exception as e:
             yield event.plain_result(f"绘图失败: {e}")
+
 
 
 
