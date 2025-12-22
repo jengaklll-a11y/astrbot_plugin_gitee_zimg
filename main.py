@@ -39,12 +39,12 @@ class GiteeAIImage(Star):
         # Gitee AI 支持的分辨率列表
         self.ratio_map = {
             "1:1": "2048x2048",
-            "4:3": "2048x1536",
             "3:4": "1536x2048",
-            "3:2": "2048x1360",
+            "4:3": "2048x1536",
             "2:3": "1360x2048",
-            "16:9": "2048x1152",
-            "9:16": "1152x2048"
+            "3:2": "2048x1360",
+            "9:16": "1152x2048",
+            "16:9": "2048x1152"
         }
         self.valid_sizes = list(self.ratio_map.values())
 
@@ -185,3 +185,4 @@ class GiteeAIImage(Star):
             ])
         except Exception as e:
             yield event.plain_result(f"绘图失败: {e}")
+
