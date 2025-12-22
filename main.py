@@ -145,3 +145,4 @@ class GiteeAIImage(Star):
             yield event.plain_result(f"绘图失败: {e}")
 
 
+
