@@ -219,15 +219,34 @@ class GiteeAIImage(Star):
                     yield event.plain_result("⚠️ 本插件仅支持文生图，不支持引用消息或图片进行生成。")
                     return
         
-        # 修正: 移除冗余的 parsing，直接使用 framework 提供的 prompt
-        real_prompt = prompt.strip()
+        # ==========================================
+        # 2. 获取完整文本（修复被空格截断的问题）
+        # ==========================================
+        full_text = ""
+        if event.message_obj and event.message_obj.message:
+            for component in event.message_obj.message:
+                # 只要是文本类型的组件都拼接起来，防止漏掉内容
+                if isinstance(component, Plain):
+                    full_text += component.text
         
+        # 如果获取不到 full_text (极端情况)，回退到默认 prompt
+        if not full_text:
+            full_text = prompt
+
+        # 移除指令本身 "/zimg" (不区分大小写)
+        idx = full_text.lower().find("/zimg")
+        if idx != -1:
+            # 这里的 +5 是 "/zimg" 的长度
+            real_prompt = full_text[idx + 5:].strip()
+        else:
+            real_prompt = full_text.strip()
+            
         if not real_prompt:
             yield event.plain_result("请提供提示词。")
             return
 
         # ==========================================
-        # 2. 比例参数提取
+        # 3. 比例参数提取
         # ==========================================
         target_size = None
         ratio_msg = ""
@@ -240,13 +259,22 @@ class GiteeAIImage(Star):
             if ratio_key in self.ratio_map:
                 target_size = self.ratio_map[ratio_key]
                 ratio_msg = f" (比例 {ratio_key})"
-                # 从提示词中移除比例部分
                 real_prompt = real_prompt.replace(raw_ratio, " ")
         
-        # 清理多余空格和标点
+        # ==========================================
+        # 4. 简化的清理逻辑 (修复长逗号串导致的问题)
+        # ==========================================
+        # 逻辑说明：先统一符号，再去重，最后去空格。
+        # 1. 把所有中文逗号换成英文逗号
+        real_prompt = real_prompt.replace("，", ",")
+        # 2. 把所有连续的空格变成一个空格
         real_prompt = re.sub(r'\s+', ' ', real_prompt)
-        real_prompt = re.sub(r'\s*([,，])\s*[,，]\s*', ', ', real_prompt)
-        real_prompt = real_prompt.strip(" ,，")
+        # 3. 把连续的逗号变成一个逗号 (比如 ",,,,,," -> ",")
+        real_prompt = re.sub(r',+', ',', real_prompt)
+        # 4. 清理逗号和空格的组合 (比如 ", , ," -> ",")
+        real_prompt = re.sub(r',\s*,', ',', real_prompt)
+        # 5. 去除首尾的符号
+        real_prompt = real_prompt.strip(" ,")
         
         yield event.plain_result(f"正在绘图{ratio_msg}...")
         
