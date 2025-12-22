@@ -11,24 +11,26 @@
         "obvious_hint": false
     },
     "model": {
-        "description": "2D绘图模型",
+        "description": "绘图模型",
         "type": "string",
         "default": "z-image-turbo"
     },
     "size": {
-        "description": "2D图片分辨率",
+        "description": "图片分辨率",
         "type": "string",
-        "default": "1024x1024"
+        "default": "2048x2048"
     },
     "num_inference_steps": {
-        "description": "2D推理步数",
+        "description": "推理步数",
         "type": "int",
         "default": 9
+        "hint": "范围1-50，默认为9"
     },
     "retention_hours": {
-        "description": "🧹 临时图片保留时长 (小时)",
+        "description": "临时图片保留时长 (小时)",
         "type": "float",
         "default": 1.0,
-        "hint": "填 0 则不自动删除。"
+        "hint": "单位每小时，填 0 则不自动删除"
     }
 }
+
