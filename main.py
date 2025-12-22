@@ -13,7 +13,7 @@ import re
 import random
 import shutil
 
-@register("astrbot_plugin_gitee_aiimg", "木有知", "Gitee AI 双模版(2D+3D)", "1.54")
+@register("astrbot_plugin_gitee_zimg", "jengaklll-a11y", "Gitee AI 单模版2D+3D")
 class GiteeAIImage(Star):
     def __init__(self, context: Context, config: dict):
         super().__init__(context)
@@ -407,3 +407,4 @@ class GiteeAIImage(Star):
         except Exception as e:
             logger.error(f"3D生成失败: {e}")
             yield event.plain_result(f"建模失败: {e}")
+
