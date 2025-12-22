@@ -23,7 +23,7 @@
     "num_inference_steps": {
         "description": "推理步数",
         "type": "int",
-        "default": 9
+        "default": 9,
         "hint": "范围1-50，默认为9"
     },
     "retention_hours": {
@@ -33,4 +33,5 @@
         "hint": "单位每小时，填 0 则不自动删除"
     }
 }
+
 
