@@ -10,7 +10,7 @@
 在 AstrBot 的管理面板中配置以下参数：
 
 - `Gitee API Key (支持多Key)`: Gitee AI API Key，请在 Gitee AI 控制台申请，见下文。
-- `图片分辨率`: 默认图片大小，例如 `2048x2048`。
+- `图片分辨率`: 默认 `2048x2048`。
 - `迭代步数`: 默认 9。
 - `临时图片保留时长/小时 (0为不删除)`:默认 1。
 
@@ -40,6 +40,7 @@
 - 请确保您的 Gitee AI 账号有足够的额度/每天一百次免费额度。
 
 - 生成的图片会临时保存在 `data/plugin_data/astrbot_plugin_gitee_aiimg/images` 目录下。
+
 
 
 
