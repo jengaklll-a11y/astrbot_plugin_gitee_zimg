@@ -15,13 +15,28 @@ class GiteeAIImage(Star):
         super().__init__(context)
         self.config = config
         
-        # 1. 基础配置
-        self.base_url = config.get("base_url", "https://ai.gitee.com/v1")
-        self.model_2d = config.get("model", "z-image-turbo")
-        self.default_size = config.get("size", "2048x2048")
+        # 1. 基础配置 (内置)
+        self.base_url = "https://ai.gitee.com/v1"
+        self.model_2d = "z-image-turbo"
+        # 直接读取步数，配置文件的 slider 只是前端交互，传回来依然是数字
         self.steps = config.get("num_inference_steps", 9)
         
-        # 2. 分辨率映射表 (Gitee AI 限制列表)
+        # 2. 分辨率解析逻辑
+        # 选项格式示例: "1:1 (2048×2048)"
+        raw_size_config = config.get("size", "1:1 (2048×2048)")
+        
+        # 正则匹配：寻找括号 ( ) 内部，格式为 数字 + x或× + 数字
+        size_match = re.search(r"\((\d+)[x×](\d+)\)", raw_size_config)
+        
+        if size_match:
+            # 拼接为 API 需要的格式 "2048x2048"
+            self.default_size = f"{size_match.group(1)}x{size_match.group(2)}"
+        else:
+            # 兜底
+            logger.warning(f"[GiteeAI] 分辨率配置格式异常: {raw_size_config}，已重置为 2048x2048")
+            self.default_size = "2048x2048"
+
+        # Gitee AI 支持的分辨率列表
         self.ratio_map = {
             "1:1": "2048x2048",
             "4:3": "2048x1536",
@@ -33,7 +48,7 @@ class GiteeAIImage(Star):
         }
         self.valid_sizes = list(self.ratio_map.values())
 
-        # Key 解析逻辑
+        # Key 解析
         raw_key = config.get("api_key", "")
         self.api_key = str(raw_key[0]) if isinstance(raw_key, list) and raw_key else (raw_key if isinstance(raw_key, str) and raw_key else "")
         if not self.api_key: logger.error("[GiteeAI] 未配置 API Key")
@@ -94,13 +109,9 @@ class GiteeAIImage(Star):
         with open(path, "wb") as f: f.write(data)
         return str(path)
 
-    # ---------------------------------------------------------
-    # 文生图模块
-    # ---------------------------------------------------------
     async def _generate_2d_core(self, prompt: str, size: str = None):
         target_size = size if size else self.default_size
         
-        # 强制修正分辨率
         if target_size not in self.valid_sizes:
             logger.warning(f"[GiteeAI] 分辨率 {target_size} 不在支持列表中，自动修正为 2048x2048")
             target_size = "2048x2048"
@@ -123,10 +134,6 @@ class GiteeAIImage(Star):
             logger.error(f"生图出错: {e}")
             raise e
 
-    # ---------------------------------------------------------
-    # 指令注册
-    # ---------------------------------------------------------
-
     @filter.llm_tool(name="draw_image")
     async def draw(self, event: AstrMessageEvent, prompt: str):
         """生成一张图片"""
@@ -142,7 +149,6 @@ class GiteeAIImage(Star):
         """
         Gitee AI 文生图
         使用方法: /zimg <提示词> [比例]
-        支持混排，例如: /zimg 一只猫，3:4，一只狗
         """
         full_text = event.message_str or ""
         parts = full_text.split(None, 1)
@@ -152,34 +158,23 @@ class GiteeAIImage(Star):
             yield event.plain_result("请提供提示词。")
             return
 
-        # --- 比例识别与Prompt清洗 ---
         target_size = None
         ratio_msg = ""
-        
-        # 1. 查找比例 (去掉了\b边界，支持 "猫3:4" 这种紧凑写法)
-        # 匹配逻辑：数字+冒号+数字
         pattern = r"(\d+[:：]\d+)"
         match = re.search(pattern, real_prompt)
         
         if match:
             raw_ratio = match.group(1)
-            ratio_key = raw_ratio.replace("：", ":") # 归一化中文冒号
-            
+            ratio_key = raw_ratio.replace("：", ":")
             if ratio_key in self.ratio_map:
                 target_size = self.ratio_map[ratio_key]
                 ratio_msg = f" (比例 {ratio_key})"
-                # 移除比例字符串，替换为空格，防止粘连
                 real_prompt = real_prompt.replace(raw_ratio, " ")
         
-        # 2. 深度清洗 Prompt (关键修复)
-        # 将换行符、制表符、多个空格全部替换为单个空格
         real_prompt = re.sub(r'\s+', ' ', real_prompt)
-        # 处理因为移除比例而留下的空逗号，例如 "猫, , 狗" -> "猫, 狗"
         real_prompt = re.sub(r'\s*([,，])\s*[,，]\s*', ', ', real_prompt)
-        # 去除首尾标点和空格
         real_prompt = real_prompt.strip(" ,，")
-        # ----------------------------
-
+        
         yield event.plain_result(f"正在绘图{ratio_msg}...")
         
         try:
@@ -190,4 +185,3 @@ class GiteeAIImage(Star):
             ])
         except Exception as e:
             yield event.plain_result(f"绘图失败: {e}")
-
