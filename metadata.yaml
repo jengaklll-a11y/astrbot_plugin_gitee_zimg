@@ -1,7 +1,6 @@
 name: astrbot_plugin_gitee_zimg
+display_name: Zimg文生图
 desc: 接入 Gitee AI（模力方舟）z-image-turbo模型（文生图），支持多key轮询
 version: v1.0.0
 author: jengaklll-a11y
 repo: https://github.com/jengaklll-a11y/astrbot_plugin_gitee_zimg
-
-
