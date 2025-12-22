@@ -1,36 +1,43 @@
 {
-    "base_url": {
-        "description": "Gitee API 地址",
-        "type": "string",
-        "default": "https://ai.gitee.com/v1"
-    },
     "api_key": {
-        "description": "Gitee API Key",
+        "description": "Gitee API Key (支持多Key)",
         "type": "list",
         "default": [],
         "obvious_hint": false
     },
-    "model": {
-        "description": "绘图模型",
-        "type": "string",
-        "default": "z-image-turbo"
-    },
     "size": {
         "description": "图片分辨率",
         "type": "string",
-        "default": "2048x2048"
+        "default": "1:1 (2048×2048)",
+        "options": [
+            "1:1 (2048×2048)",
+            "3:4 (1536×2048)",
+            "4:3 (2048×1536)",
+            "2:3 (1360×2048)",
+            "3:2 (2048×1360)",
+            "9:16 (1152×2048)",
+            "16:9 (2048×1152)"
+        ]
     },
     "num_inference_steps": {
-        "description": "推理步数",
+        "description": "推理步数 (1-50)",
         "type": "int",
         "default": 9,
-        "hint": "范围1-50，默认为9"
+        "slider": {
+            "min": 1,
+            "max": 50,
+            "step": 1
+        }
     },
     "retention_hours": {
-        "description": "临时图片保留时长 (小时)",
+        "description": "临时图片保留时长/小时",
         "type": "float",
         "default": 1.0,
-        "hint": "填 0 则不自动删除"
+        "hint": "填 0 则不自动删除",
+        "slider": {
+            "min": 0,
+            "max": 72,
+            "step": 0.5
+        }
     }
 }
-
