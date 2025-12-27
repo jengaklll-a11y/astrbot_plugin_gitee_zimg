@@ -3,7 +3,7 @@ import time
 import base64
 import re
 import uuid
-import asyncio # 引入 asyncio 以捕获超时
+import asyncio 
 import aiohttp
 from astrbot.api.message_components import Image, Plain, Reply
 from astrbot.api.event import filter, AstrMessageEvent
@@ -13,7 +13,7 @@ from astrbot.api import logger
 # 定义插件名称常量，确保全局一致
 PLUGIN_NAME = "astrbot_plugin_gitee_zimg"
 
-@register(PLUGIN_NAME, "jengaklll-a11y", "接入 Gitee AI（模力方舟）z-image-turbo模型（文生图），支持多key轮询", "1.0.2")
+@register(PLUGIN_NAME, "jengaklll-a11y", "接入 Gitee AI（模力方舟）z-image-turbo模型（文生图），支持多key轮询", "1.0.3")
 class GiteeAIImage(Star):
     def __init__(self, context: Context, config: dict):
         super().__init__(context)
@@ -23,7 +23,7 @@ class GiteeAIImage(Star):
         self.base_url = "https://ai.gitee.com/v1"
         self.model_2d = "z-image-turbo"
         
-        # 修正: 强制类型转换，防止配置项被存为字符串
+        # 修正: 强制类型转换
         self.steps = int(config.get("num_inference_steps", 9))
         
         # 2. 分辨率解析逻辑
@@ -65,7 +65,7 @@ class GiteeAIImage(Star):
         if self.retention_hours <= 0:
             return
             
-        # 动态冷却时间: 取保留时间的一半 或 3600秒 的较小值，最小300秒
+        # 动态冷却时间
         interval = max(300, min(3600, int(self.retention_hours * 1800)))
         
         now = time.time()
@@ -127,7 +127,6 @@ class GiteeAIImage(Star):
         return str(path)
 
     async def _generate_2d_core(self, prompt: str, size: str = None):
-        # 每次生图前触发清理检查
         self._cleanup_temp_files()
 
         target_size = size if size else self.default_size
@@ -154,7 +153,6 @@ class GiteeAIImage(Star):
         }
 
         try:
-            # 增加总超时时间到 180 秒，防止模型冷启动导致超时
             async with aiohttp.ClientSession() as session:
                 async with session.post(url, headers=headers, json=payload, timeout=180) as resp:
                     if resp.status != 200:
@@ -179,33 +177,21 @@ class GiteeAIImage(Star):
                     
                     raise Exception(f"API返回格式异常: {str(resp_json)[:100]}")
 
-        # 专门捕获超时错误
         except asyncio.TimeoutError:
             logger.error(f"[{PLUGIN_NAME}] API请求超时")
             raise Exception("API请求超时，模型可能正在冷启动，请稍后重试。")
         
-        # 专门捕获网络连接错误
         except aiohttp.ClientConnectorError as e:
             logger.error(f"[{PLUGIN_NAME}] 网络连接失败: {e}")
             raise Exception(f"无法连接到 Gitee API: {e}")
 
-        # 捕获其他所有异常，并打印类型
         except Exception as e:
             logger.error(f"[{PLUGIN_NAME}] 生图未知出错 ({type(e).__name__}): {e}")
-            # 如果 e 是空的，强制给一个描述
             if not str(e):
                 raise Exception(f"未知错误 ({type(e).__name__})，请查看后台日志")
             raise e
 
-    @filter.llm_tool(name="draw_image")
-    async def draw(self, event: AstrMessageEvent, prompt: str):
-        """生成一张图片"""
-        yield event.plain_result("正在绘图...")
-        try:
-            img_path = await self._generate_2d_core(prompt)
-            yield event.chain_result([Image.fromFileSystem(img_path)])
-        except Exception as e:
-            yield event.plain_result(f"绘图失败: {e}")
+    # 已移除 @filter.llm_tool 装饰的 draw 方法
 
     @filter.command("zimg")
     async def cmd_draw(self, event: AstrMessageEvent, prompt: str = ""): 
@@ -213,7 +199,6 @@ class GiteeAIImage(Star):
         Gitee AI 文生图
         使用方法: /zimg <提示词> [比例]
         """
-        # ... (此处指令处理逻辑保持不变，为节省篇幅省略，使用上面的类结构即可) ...
         # ==========================================
         # 1. 严格的图生图/引用拦截逻辑
         # ==========================================
