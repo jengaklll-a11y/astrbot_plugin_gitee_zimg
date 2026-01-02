@@ -12,18 +12,19 @@
 - `Gitee API Key (支持多Key)`: Gitee AI API Key，请在 Gitee AI 控制台申请，见下文。
 - `图片分辨率`: 默认 2048x2048。
 - `迭代步数`: 默认 9。
-- `临时图片保留时长/小时 (0为不删除)`:默认 1。
+- `临时图片保留时长/小时 (0为不删除)`: 默认 1。
+- `自动撤回时间(秒)`: 默认为 0（不撤回）。设置后，机器人发送图片后会在指定时间后尝试撤回消息（例如设置 30 秒）。
 
 ## Gitee AI API Key获取方法：
-1.访问https://ai.gitee.com/serverless-api?model=z-image-turbo
+1. 访问 https://ai.gitee.com/serverless-api?model=z-image-turbo
 
-2.<img width="2241" height="1280" alt="PixPin_2025-12-05_16-56-27" src="https://github.com/user-attachments/assets/77f9a713-e7ac-4b02-8603-4afc25991841" />
+2. <img width="2241" height="1280" alt="PixPin_2025-12-05_16-56-27" src="https://github.com/user-attachments/assets/77f9a713-e7ac-4b02-8603-4afc25991841" />
 
-3.免费额度<img width="240" height="63" alt="PixPin_2025-12-05_16-56-49" src="https://github.com/user-attachments/assets/6efde7c4-24c6-456a-8108-e78d7613f4fb" />
+3. 免费额度 <img width="240" height="63" alt="PixPin_2025-12-05_16-56-49" src="https://github.com/user-attachments/assets/6efde7c4-24c6-456a-8108-e78d7613f4fb" />
 
-4.可以涩涩，警惕违规被举报
+4. 可以涩涩，警惕违规被举报
 
-5.好用可以给个🌟
+5. 好用可以给个🌟
 
 ### 图像尺寸仅支持以下格式，不在其中则报错
 
@@ -38,5 +39,4 @@
 ## 注意事项
 
 - 请确保您的 Gitee AI 账号有足够的额度/每天一百次免费额度。
-
 - 生成的图片会临时保存在 `data/plugin_data/astrbot_plugin_gitee_zimg/images` 目录下。
