@@ -39,8 +39,16 @@
             "max": 72,
             "step": 0.5
         }
+    },
+    "auto_recall": {
+        "description": "自动撤回时间(秒)",
+        "hint": "0 为不撤回。设置后，机器人发送图片后会在指定时间后尝试撤回消息。",
+        "type": "int",
+        "default": 0,
+        "slider": {
+            "min": 0,
+            "max": 120,
+            "step": 5
+        }
     }
 }
-
-
-
