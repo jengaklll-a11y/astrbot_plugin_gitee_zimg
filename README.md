@@ -39,32 +39,4 @@
 
 - 请确保您的 Gitee AI 账号有足够的额度/每天一百次免费额度。
 
-- 生成的图片会临时保存在 `data/plugin_data/astrbot_plugin_gitee_aiimg/images` 目录下。
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+- 生成的图片会临时保存在 `data/plugin_data/astrbot_plugin_gitee_zimg/images` 目录下。
