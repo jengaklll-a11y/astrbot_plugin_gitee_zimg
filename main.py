@@ -13,7 +13,7 @@ from astrbot.api import logger
 
 PLUGIN_NAME = "astrbot_plugin_gitee_zimg"
 
-@register(PLUGIN_NAME, "jengaklll-a11y", "接入 Gitee AI（模力方舟）z-image-turbo模型（文生图），支持多key轮询", "1.0.5")
+@register(PLUGIN_NAME, "jengaklll-a11y", "接入 Gitee AI（模力方舟）z-image-turbo模型（文生图），支持多key轮询，自动撤回", "1.0.5")
 class GiteeAIImage(Star):
     def __init__(self, context: Context, config: dict):
         super().__init__(context)
@@ -302,3 +302,4 @@ class GiteeAIImage(Star):
         except Exception as e:
             logger.error(f"[{PLUGIN_NAME}] 执行失败: {e}")
             yield event.plain_result(f"执行失败: {e}")
+
