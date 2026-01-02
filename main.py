@@ -5,15 +5,15 @@ import re
 import uuid
 import asyncio 
 import aiohttp
+import json
 from astrbot.api.message_components import Image, Plain, Reply
 from astrbot.api.event import filter, AstrMessageEvent
 from astrbot.api.star import Context, Star, register, StarTools
 from astrbot.api import logger
 
-# 定义插件名称常量，确保全局一致
 PLUGIN_NAME = "astrbot_plugin_gitee_zimg"
 
-@register(PLUGIN_NAME, "jengaklll-a11y", "接入 Gitee AI（模力方舟）z-image-turbo模型（文生图），支持多key轮询", "1.0.3")
+@register(PLUGIN_NAME, "jengaklll-a11y", "接入 Gitee AI（模力方舟）z-image-turbo模型（文生图），支持多key轮询", "1.0.5")
 class GiteeAIImage(Star):
     def __init__(self, context: Context, config: dict):
         super().__init__(context)
@@ -22,18 +22,14 @@ class GiteeAIImage(Star):
         # 1. 基础配置
         self.base_url = "https://ai.gitee.com/v1"
         self.model_2d = "z-image-turbo"
-        
-        # 修正: 强制类型转换
         self.steps = int(config.get("num_inference_steps", 9))
         
-        # 2. 分辨率解析逻辑
+        # 2. 分辨率解析
         raw_size_config = config.get("size", "1:1 (2048×2048)")
         size_match = re.search(r"\((\d+)[x×](\d+)\)", raw_size_config)
-        
         if size_match:
             self.default_size = f"{size_match.group(1)}x{size_match.group(2)}"
         else:
-            logger.warning(f"[{PLUGIN_NAME}] 分辨率配置格式异常: {raw_size_config}，已重置为 2048x2048")
             self.default_size = "2048x2048"
 
         self.ratio_map = {
@@ -43,7 +39,7 @@ class GiteeAIImage(Star):
         }
         self.valid_sizes = list(self.ratio_map.values())
 
-        # 修正: 优化 API Key 解析逻辑
+        # API Key
         self.api_key = ""
         raw_key = config.get("api_key")
         if isinstance(raw_key, list) and raw_key:
@@ -55,26 +51,35 @@ class GiteeAIImage(Star):
             logger.error(f"[{PLUGIN_NAME}] 未配置 API Key，插件无法工作")
 
         self.retention_hours = float(config.get("retention_hours", 1.0))
-        # 新增: 记录上次清理时间
         self.last_cleanup_time = 0
+        self.auto_recall = int(config.get("auto_recall", 0))
+
+    # =========================================================
+    # 辅助工具：稳健获取 Bot 实例
+    # =========================================================
+    def _get_bot(self, event: AstrMessageEvent):
+        if hasattr(event, "bot") and event.bot:
+            return event.bot
+        if hasattr(event, "message_obj") and hasattr(event.message_obj, "bot"):
+            return event.message_obj.bot
+        try:
+            return self.context.get_bot()
+        except:
+            pass
+        return None
 
     # =========================================================
     # 自动清理模块
     # =========================================================
     def _cleanup_temp_files(self):
-        if self.retention_hours <= 0:
-            return
-            
-        # 动态冷却时间
-        interval = max(300, min(3600, int(self.retention_hours * 1800)))
+        if self.retention_hours <= 0: return
         
+        interval = max(300, min(3600, int(self.retention_hours * 1800)))
         now = time.time()
-        if now - self.last_cleanup_time < interval:
-            return
+        if now - self.last_cleanup_time < interval: return
 
         save_dir = StarTools.get_data_dir(PLUGIN_NAME) / "images"
-        if not save_dir.exists():
-            return
+        if not save_dir.exists(): return
 
         retention_seconds = self.retention_hours * 3600
         deleted_count = 0
@@ -90,14 +95,8 @@ class GiteeAIImage(Star):
                             if ext in ['.jpg', '.png', '.jpeg', '.webp']:
                                 os.remove(file_path)
                                 deleted_count += 1
-                        except Exception as del_err:
-                            logger.warning(f"[{PLUGIN_NAME}] 删除文件失败 {filename}: {del_err}")
-            
-            if deleted_count > 0:
-                logger.info(f"[{PLUGIN_NAME}] 清理完成，共释放 {deleted_count} 张图片")
-            
+                        except Exception: pass
             self.last_cleanup_time = now
-            
         except Exception as e:
             logger.warning(f"[{PLUGIN_NAME}] 自动清理流程异常: {e}")
 
@@ -111,8 +110,7 @@ class GiteeAIImage(Star):
                 data = base64.b64decode(encoded)
             else:
                 async with session.get(url, headers=headers, timeout=60) as resp:
-                    if resp.status != 200:
-                        raise Exception(f"下载失败 HTTP {resp.status}")
+                    if resp.status != 200: raise Exception(f"下载失败 HTTP {resp.status}")
                     data = await resp.read()
         
         save_dir = StarTools.get_data_dir(PLUGIN_NAME) / "images"
@@ -120,31 +118,20 @@ class GiteeAIImage(Star):
         
         file_name = f"{int(time.time())}_{uuid.uuid4().hex}{suffix}"
         path = save_dir / file_name
-        
-        with open(path, "wb") as f:
-            f.write(data)
-            
+        with open(path, "wb") as f: f.write(data)
         return str(path)
 
     async def _generate_2d_core(self, prompt: str, size: str = None):
         self._cleanup_temp_files()
-
         target_size = size if size else self.default_size
-        if target_size not in self.valid_sizes:
-            logger.warning(f"[{PLUGIN_NAME}] 分辨率 {target_size} 不在支持列表中，自动修正为 2048x2048")
-            target_size = "2048x2048"
+        if target_size not in self.valid_sizes: target_size = "2048x2048"
 
         url = f"{self.base_url}/images/generations"
-        
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
             "User-Agent": "Mozilla/5.0",
-            "Referer": "https://ai.gitee.com/",
-            "Origin": "https://ai.gitee.com",
-            "Accept": "application/json"
         }
-        
         payload = {
             "model": self.model_2d,
             "prompt": prompt,
@@ -157,12 +144,10 @@ class GiteeAIImage(Star):
                 async with session.post(url, headers=headers, json=payload, timeout=180) as resp:
                     if resp.status != 200:
                         text_resp = await resp.text()
-                        if "Forbidden" in text_resp:
-                            raise Exception(f"请求被拒绝 (403)，可能是API Key无效或被风控。")
-                        raise Exception(f"API错误 {resp.status}: {text_resp[:100]}...")
+                        if "Forbidden" in text_resp: raise Exception("API Key无效或被风控(403)")
+                        raise Exception(f"API错误 {resp.status}")
                     
                     resp_json = await resp.json()
-                    
                     if "data" in resp_json and len(resp_json["data"]) > 0:
                         data_item = resp_json["data"][0]
                         if "url" in data_item:
@@ -171,27 +156,37 @@ class GiteeAIImage(Star):
                             save_dir = StarTools.get_data_dir(PLUGIN_NAME) / "images"
                             save_dir.mkdir(parents=True, exist_ok=True)
                             path = save_dir / f"{int(time.time())}_b64.jpg"
-                            with open(path, "wb") as f: 
-                                f.write(base64.b64decode(data_item["b64_json"]))
+                            with open(path, "wb") as f: f.write(base64.b64decode(data_item["b64_json"]))
                             return str(path)
-                    
-                    raise Exception(f"API返回格式异常: {str(resp_json)[:100]}")
-
-        except asyncio.TimeoutError:
-            logger.error(f"[{PLUGIN_NAME}] API请求超时")
-            raise Exception("API请求超时，模型可能正在冷启动，请稍后重试。")
-        
-        except aiohttp.ClientConnectorError as e:
-            logger.error(f"[{PLUGIN_NAME}] 网络连接失败: {e}")
-            raise Exception(f"无法连接到 Gitee API: {e}")
-
+                    raise Exception(f"API返回数据异常")
         except Exception as e:
-            logger.error(f"[{PLUGIN_NAME}] 生图未知出错 ({type(e).__name__}): {e}")
-            if not str(e):
-                raise Exception(f"未知错误 ({type(e).__name__})，请查看后台日志")
+            logger.error(f"[{PLUGIN_NAME}] 生图失败: {e}")
             raise e
 
-    # 已移除 @filter.llm_tool 装饰的 draw 方法
+    # =========================================================
+    # 撤回逻辑
+    # =========================================================
+    async def _recall_later(self, bot, raw_result):
+        if self.auto_recall <= 0 or not raw_result: return
+        await asyncio.sleep(self.auto_recall)
+        
+        def _find_id(data):
+            if isinstance(data, dict):
+                if "message_id" in data: return data["message_id"]
+                if "data" in data: return _find_id(data["data"])
+            return None
+
+        msg_id = _find_id(raw_result)
+        
+        if msg_id:
+            try:
+                msg_id_int = int(msg_id)
+                logger.info(f"[{PLUGIN_NAME}] 正在撤回消息 (ID: {msg_id_int})...")
+                await bot.api.call_action("delete_msg", message_id=msg_id_int)
+            except Exception as e:
+                logger.error(f"[{PLUGIN_NAME}] 撤回请求失败: {e}")
+        else:
+            logger.warning(f"[{PLUGIN_NAME}] 撤回失效: 无法获取 ID")
 
     @filter.command("zimg")
     async def cmd_draw(self, event: AstrMessageEvent, prompt: str = ""): 
@@ -199,26 +194,17 @@ class GiteeAIImage(Star):
         Gitee AI 文生图
         使用方法: /zimg <提示词> [比例]
         """
-        # ==========================================
-        # 1. 严格的图生图/引用拦截逻辑
-        # ==========================================
         if event.message_obj and event.message_obj.message:
             for component in event.message_obj.message:
-                if isinstance(component, Image):
-                    yield event.plain_result("⚠️ 本插件仅支持文生图，不支持发送图片进行生成（图生图）。")
-                    return
-                if isinstance(component, Reply):
-                    yield event.plain_result("⚠️ 本插件仅支持文生图，不支持引用消息或图片进行生成。")
-                    return
+                if isinstance(component, (Image, Reply)):
+                     pass 
         
         full_text = ""
         if event.message_obj and event.message_obj.message:
             for component in event.message_obj.message:
                 if isinstance(component, Plain):
                     full_text += component.text
-        
-        if not full_text:
-            full_text = prompt
+        if not full_text: full_text = prompt
 
         idx = full_text.lower().find("/zimg")
         if idx != -1:
@@ -243,19 +229,76 @@ class GiteeAIImage(Star):
                 ratio_msg = f" (比例 {ratio_key})"
                 real_prompt = real_prompt.replace(raw_ratio, " ")
         
-        real_prompt = real_prompt.replace("，", ",")
-        real_prompt = re.sub(r'\s+', ' ', real_prompt)
-        real_prompt = re.sub(r',+', ',', real_prompt)
-        real_prompt = re.sub(r',\s*,', ',', real_prompt)
         real_prompt = real_prompt.strip(" ,")
-        
         yield event.plain_result(f"正在绘图{ratio_msg}...")
         
         try:
             img_path = await self._generate_2d_core(real_prompt, size=target_size)
-            yield event.chain_result([
-                Reply(id=event.message_obj.message_id), 
-                Image.fromFileSystem(img_path)
-            ])
+            
+            # =========================================================
+            # 直接调用 Bot API 发送
+            # =========================================================
+            bot = self._get_bot(event)
+            if not bot:
+                yield event.chain_result([Image.fromFileSystem(img_path)])
+                return
+
+            segments = []
+            
+            # 1. 引用 (Reply)
+            if event.message_obj.message_id:
+                segments.append({
+                    "type": "reply",
+                    "data": {"id": str(event.message_obj.message_id)}
+                })
+            
+            # 2. 图片 (Image) - 放在文字之前
+            abs_path = os.path.abspath(img_path)
+            if os.name == 'nt':
+                abs_path = abs_path.replace("\\", "/")
+            
+            segments.append({
+                "type": "image",
+                "data": {"file": f"file:///{abs_path}"}
+            })
+
+            # 3. 文本 (Text) - 放在图片之后
+            # 构造文案
+            text_content = "绘图成功"
+            if self.auto_recall > 0:
+                text_content += f"，{self.auto_recall}秒后自动撤回..."
+
+            segments.append({
+                "type": "text",
+                "data": {"text": text_content}
+            })
+
+            # 4. 构建 Payload
+            payload = {"message": segments}
+            msg_obj = event.message_obj
+            
+            group_id = getattr(msg_obj, "group_id", None)
+            user_id = None
+            if hasattr(msg_obj, "sender") and hasattr(msg_obj.sender, "user_id"):
+                user_id = msg_obj.sender.user_id
+            
+            if group_id:
+                payload["group_id"] = group_id
+                action = "send_group_msg"
+            elif user_id:
+                payload["user_id"] = user_id
+                action = "send_private_msg"
+            else:
+                logger.error(f"[{PLUGIN_NAME}] 无法识别发送目标")
+                return
+
+            # 5. 发送
+            result = await bot.api.call_action(action, **payload)
+            
+            # 6. 撤回
+            if self.auto_recall > 0:
+                asyncio.create_task(self._recall_later(bot, result))
+                
         except Exception as e:
-            yield event.plain_result(f"绘图失败: {e}")
+            logger.error(f"[{PLUGIN_NAME}] 执行失败: {e}")
+            yield event.plain_result(f"执行失败: {e}")
