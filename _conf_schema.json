@@ -6,7 +6,7 @@
         "obvious_hint": false
     },
     "size": {
-        "description": "图片分辨率",
+        "description": "文生图默认分辨率 (仅z-image-turbo生效)",
         "type": "string",
         "default": "1:1 (2048×2048)",
         "options": [
@@ -21,13 +21,24 @@
     },
     "num_inference_steps": {
         "description": "迭代步数",
-        "hint": "数值越大图像越清晰，但生成时间也越长",
+        "hint": "默认9，数值越大越精细但越慢",
         "type": "int",
         "default": 9,
         "slider": {
             "min": 1,
             "max": 50,
             "step": 1
+        }
+    },
+    "timeout_seconds": {
+        "description": "任务超时时间(秒)",
+        "hint": "Gitee高峰期排队较久，建议设置 180 以上",
+        "type": "int",
+        "default": 300,
+        "slider": {
+            "min": 60,
+            "max": 600,
+            "step": 30
         }
     },
     "retention_hours": {
@@ -42,7 +53,7 @@
     },
     "auto_recall": {
         "description": "自动撤回时间(秒)",
-        "hint": "0 为不撤回。设置后，机器人发送图片后会在指定时间后尝试撤回消息。",
+        "hint": "0 为不撤回。设置后，机器人发送图片后会在指定时间后尝试撤回消息",
         "type": "int",
         "default": 0,
         "slider": {
