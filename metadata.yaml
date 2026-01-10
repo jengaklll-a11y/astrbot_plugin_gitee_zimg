@@ -1,10 +1,6 @@
 name: astrbot_plugin_gitee_zimg
-display_name: Zimg文生图
-desc: 接入 Gitee AI（模力方舟）z-image-turbo模型（文生图），支持多key轮询，自动撤回
-version: v1.0.5
+display_name: Gitee-AI绘图
+desc: 整合 Gitee AI 绘图：输入纯文字调用 z-image-turbo 文生图，输入文字+图片调用 Qwen-Image-Edit 图生图，接入全局预设中心
+version: v2.0.0
 author: jengaklll-a11y
 repo: https://github.com/jengaklll-a11y/astrbot_plugin_gitee_zimg
-
-
-
-
